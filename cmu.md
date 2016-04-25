@@ -301,23 +301,22 @@ as follows:
 
 ### An Example
 
-A typical Kubernetes cluster runs a search engine might be running the
-following jobs:
+A typical Kubernetes cluster runs an automatic speech recognition
+business might be running the following jobs:
 
-1. The search engine, with as many instances so to serve many
+1. The speech service, with as many instances so to serve many
    simultaneous user requests.
 1. The Kafka system, whose each channel collects a certain log stream
-   of the search engine.
+   of the speech service.
 1. Kafka channels are followed by Storm jobs for online data
-   processing.  For example, a Storm job joins the impression log
-   stream and click log stream.
-1. The joined result, namely impression log stream, is fed to an online
-   regression learning system for the prediction of the click-through
-   rate of search results.
-1. This online regression system also serves requests from the search engine.
-1. Researchers might change the regression model, and run some
-   experiment online training jobs, which serve testing search engine
-   jobs.
+   processing.  For example, a Storm job joins the utterance log
+   stream and transcription stream.
+1. The joined result, namely session log stream, is fed to an
+   ASR model trainer that updates the model.
+1. This trainer notifies ASR server when it writes updated models into
+   Ceph.
+1. Researchers might change the training algorithm, and run some
+   experiment training jobs, which serve testing ASR service jobs.
 
 ### Daily Work 
 
