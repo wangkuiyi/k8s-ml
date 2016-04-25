@@ -451,18 +451,11 @@ The data flow
 
 
 
-<!--  LocalWords:  Jike Caffe CUDA GPUs Nvidia cuBLAS cuDNN MPI SGD
- -->
-<!--  LocalWords:  AllReduce DNN Hadoop HDFS flume MapReduce GFS GBR
- -->
-<!--  LocalWords:  memcached NoSQL Bigtable Redis Pregel PageRank scp
- -->
-<!--  LocalWords:  SETI Mesos nginx APIs Versioning Rollout untar tmp
- -->
-<!--  LocalWords:  versioning rollout DistBelief MPICH BorgMPI PLSA
- -->
-<!--  LocalWords:  rm cgroup API Github Kubernetes Yi Apr Tensorflow
- -->
-<!--  LocalWords:  preprocess GraphLab Petuum tarball CI HPC HBase DC
- -->
+#  LocalWords:  Jike Caffe CUDA GPUs Nvidia cuBLAS cuDNN MPI SGD
+#  LocalWords:  AllReduce DNN Hadoop HDFS flume MapReduce GFS GBR
+#  LocalWords:  memcached NoSQL Bigtable Redis Pregel PageRank scp
+#  LocalWords:  SETI Mesos nginx APIs Versioning Rollout untar tmp
+#  LocalWords:  versioning rollout DistBelief MPICH BorgMPI PLSA
+#  LocalWords:  rm cgroup API Github Kubernetes Yi Apr Tensorflow
+#  LocalWords:  preprocess GraphLab Petuum tarball CI HPC HBase DC
 #  LocalWords:  Mahout MLlib Graphlab Ceph ASR Mgmt FS Ubuntu apps
