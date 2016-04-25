@@ -89,9 +89,9 @@ Research Lab Mode
 
 - Big data as log streams
 
-- Unpredictablly many kinds of jobs
+- Unpredictably many kinds of jobs
 
-- Better utilization of the cluster saves millions of dollors
+- Better utilization of the cluster saves millions of dollars
 
 #----------------------------------------------------------------------
 # Unfortunately, all aforementioned challenges become real, when a
@@ -157,7 +157,7 @@ One cluster run all jobs
 - DC-OS
 - Kubernetes
 
-Cluster management systems should privdes API but not framework.
+Cluster management systems should provides API but not framework.
 
 #----------------------------------------------------------------------
 # Then we need a common software platform, the distributed operating
@@ -180,7 +180,7 @@ Cluster management systems should privdes API but not framework.
 
 * Distributed Computing Frameworks
 
-Framework creators tend to over-advertise the generally applicablity:
+Framework creators tend to over-advertise the generally applicability:
 
 - Hadoop Mahout
 - Spark MLlib
@@ -258,7 +258,7 @@ Kubernetes
 
 - Kubernetes kills 50 workers of A to free resource for B.
 - After B completes, Kubernetes restart those 50 workers of A.
-- If A runs async SGD instead of sync SGD, it can continue with 50 workers.
+- If A runs asynchronous SGD instead of sync SGD, it can continue with 50 workers.
 
 #----------------------------------------------------------------------
 # Consider the case that an experiment model training job is using all
@@ -449,3 +449,20 @@ The data flow
                                    Ceph <-model-- [model trainer]
 
 
+
+
+<!--  LocalWords:  Jike Caffe CUDA GPUs Nvidia cuBLAS cuDNN MPI SGD
+ -->
+<!--  LocalWords:  AllReduce DNN Hadoop HDFS flume MapReduce GFS GBR
+ -->
+<!--  LocalWords:  memcached NoSQL Bigtable Redis Pregel PageRank scp
+ -->
+<!--  LocalWords:  SETI Mesos nginx APIs Versioning Rollout untar tmp
+ -->
+<!--  LocalWords:  versioning rollout DistBelief MPICH BorgMPI PLSA
+ -->
+<!--  LocalWords:  rm cgroup API Github Kubernetes Yi Apr Tensorflow
+ -->
+<!--  LocalWords:  preprocess GraphLab Petuum tarball CI HPC HBase DC
+ -->
+#  LocalWords:  Mahout MLlib Graphlab Ceph ASR Mgmt FS Ubuntu apps
