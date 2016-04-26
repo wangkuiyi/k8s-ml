@@ -39,8 +39,9 @@ However, it has some limitations as well.
 We highly optimized the AllReduce operation, because the system runs
 synchronous SGD algorithm, where the effective mini-batch is the sum
 of those on each GPU.  If we use more than 32 GPUs, the effective
-mini-batch size would be too big and it would take too long for
-the job to converge.  This is a limitation of parallelism.
+mini-batch size would be too big and it would take too many iterations
+and too long time for the job to converge.  This is a limitation of
+parallelism.
 
 Another problem is low utilization.  Though the cluster has many
 nodes, each job cannot use most of them.  So we need to run many jobs
@@ -101,9 +102,10 @@ First of all, instead of duplicating data over all nodes, we need a
 distributed filesystem like Hadoop HDFS and Google GFS reliably limits
 data duplication.  For example, each chunk of data is duplicated on 3
 or 5 nodes.  Less duplication means lower data I/O, but it also
-provides bigger storage.  Indeed, for high performance I/O, we can use
-caching services (e.g., memcached) or NoSQL database (Bigtable and
-Redis), which preload data into memory.
+provides scalable storage -- we can add nodes to get bigger storage
+space.  Indeed, for high performance I/O, we can use caching services
+(e.g., memcached) or NoSQL database (Bigtable and Redis), which
+preload data into memory.
 
 #### Cluster Management System
 
@@ -113,25 +115,24 @@ learning and standard ones like memcached and Redis.  Possible open
 source choices include YARN, Mesos and Kubernetes.  Their designs are
 all influenced by Google Borg.
 
-Both Borg and Kubernetes, the open sourced rewrite of Borg in Go, can
-run arbitrary programs such as nginx and memcached.  Users usually
-write a job description file to pass in information like the number of
-preferred instances, the resource requirement of each instance, and
-the maximum trials before restarting failed workers.
+Kubernetes is the open source rewrite of Borg in Go.  It can run
+arbitrary programs such as nginx and memcached.  Users usually write a
+job description file to pass in information like the number of
+preferred workers and the resource requirement of each worker.
 
 Mesos runs only programs specifically written to fit its framework.
-In order to run Hadoop MapReduce or nginx, we have to write C++
-adaptor programs, which, once launched by Mesos, start Hadoop and/or
-nginx.  Similarly, YARN runs only programs following specific
-patterns.
+In order to run Hadoop MapReduce or nginx on Mesos, we have to write
+C++ adaptor programs, which, once launched by Mesos, start Hadoop
+and/or nginx.  YARN runs only programs following specific patterns as
+well.
 
 #### Distributed Computing Frameworks
 
 To ease the effort of writing distributed programs running on the
 cluster, it is a good idea to hide the common part that handles
 concurrency and communication in a library, and let users write only
-task specific part.  These libraries are called distributed computing
-frameworks.
+application specific part.  These libraries are called distributed
+computing frameworks.
 
 The machine learning community has long been acquainted with MapReduce,
 GraphLab and Spark.  To show the business value, framework developers
@@ -139,10 +140,10 @@ tend to show that many algorithms fit in their framework.  But the
 reality is that there is a balance between generally applicability and
 runtime performance.
 
-Google showed us a good example -- each framework for a certain type
-of jobs.  MapReduce for batch index building and other batch data
-processing, Pregel for efficient PageRank computing and graph
-computing, GBR for maximum entropy model training and other
+Google showed us a different philosophy -- each framework for a
+certain type of jobs.  MapReduce for batch index building and other
+batch data processing, Pregel for efficient PageRank computing and
+graph computing, GBR for maximum entropy model training and other
 AllReduce-operation based algorithms, SETI specifically for
 click-through rate prediction and feature learning.
 
@@ -173,6 +174,7 @@ sure that newly started jobs run the new version, without killing
 existing jobs that run the old version.  This is called *rollout*.  A
 similar problem is *rollback* -- if we find that the newly released
 version has a bug, we need to go back with the old version.
+Kubernetes can take care of both rollout and rollback.
 
 #### Dynamic and Elastic Scheduling
 
@@ -181,16 +183,17 @@ the 100 GPUs in the cluster.  A production job gets started and asks
 for 50 GPUs.  If we use MPI, we'd have to kill the experiment job so
 to release enough resource to run the production job.  This tends to
 make the owner of the experiment job get the impression that he is
-doing a "second-class" job.
+doing a "second-class" work.
 
-Kubernetes is smarter than MPI as it can kill only 50 workers of the
-experiment job, so to allow both jobs run at the same time.  But this
-also requires that we change our program -- we have to abandon the
-highly optimized AllReduce operation, because it would block if some
-workers are killed and cannot join this collaborative operation.
+Kubernetes is smarter than MPI as it can kill, or preempt, only 50
+workers of the experiment job, so to allow both jobs run at the same
+time.  But this also requires that we change our program -- we have to
+abandon the highly optimized AllReduce operation, because it would
+block if some workers are killed and cannot join this collaborative
+operation.
 
 Remember the reason that we use AllReduce is because we use
-synchronous SGD.  But in order to write a distributed DNN training
+synchronous SGD.  But in order to write a scalable DNN training
 program, we might have to use asynchronous SGD, even if asynchronous
 SGD is arguably slower than its synchronous counterpart.
 
@@ -210,19 +213,18 @@ Above example introduces the concept of auto fault recovery, which is
 important if we want scalability.
 
 In a general purpose cluster, there is always a chance that some
-workers get preempted by some higher priority jobs.  The more workers
-in a job, and the longer the time needed by the job, the higher
-probability that some workers get preempted during the run.  It is
-true that we can restart a job, but if the system is not auto
-recoverable, the restarted job has to start from the very beginning As
-a result, the jobs might never complete, because every time it's
-restarted, it is likely being preempted.
+workers get preempted.  The more workers in a job, and the longer the
+time needed by the job, the higher probability that some workers get
+preempted during the run.  It is true that we can restart a job, but
+if the system is not auto recoverable, the restarted job has to start
+from the very beginning As a result, the jobs might never complete,
+because every time it's restarted, it is likely being preempted.
 
 The key to auto fault recovery is to cut off the data dependencies
 between workers.  With MPI, every worker can talk to any other worker
 at any time.  Suppose that we want to restart a worker A and bring it
 back to the status right before it was preempted, we need to re-send
-to A all those messages it accepted during its previous life.  That
+to A all those messages it received during its previous life.  That
 means we need to restart all those workers who talked to A.  Such
 dependencies propagate and it is often that all workers need to be
 restarted, and the job restarts from the very beginning.
@@ -256,9 +258,9 @@ filesystem:
 
 Consider that a job A writes intermediate results to the `/tmp`
 directory, and it removes these intermediate results periodically by
-calling `rm /tmp/*`.  Another job B writes checkpoints to `/tmp`.  A
-might unintentionally remove checkpoints of B.  And it is very hard to
-detect such kind of bugs, since the error rarely appears again.
+calling `rm /tmp/*`.  Another job B writes checkpoints to `/tmp`.  Job
+A might unintentionally remove checkpoints of B.  And it is very hard
+to detect such kind of bugs, since the error rarely appears again.
 
 With Kubernetes, people have to build their programs into Docker
 *images* that run as Docker *containers*.  Each container has its own
@@ -294,10 +296,10 @@ as follows:
   that a valuable algorithm needs specially tailored parallel
   computing framework.
 
-- It is often **the case** that we need to change the algorithm so to control the
-  data dependencies between workers.  This would make it easier for us
-  to design a fault recoverable and scalable framework for this
-  algorithm.
+- It is often the case that we need to change the algorithm so to
+  control the data dependencies between workers.  This would make it
+  easier for us to design a fault recoverable and scalable framework
+  for this algorithm.
 
 ### An Example
 
@@ -340,5 +342,5 @@ into the master branch.
  -->
 <!--  LocalWords:  rm cgroup API Github Kubernetes Yi Apr Tensorflow
  -->
-<!--  LocalWords:  preprocess GraphLab Petuum tarball CI
+<!--  LocalWords:  preprocess GraphLab Petuum tarball CI ASR Ceph
  -->
