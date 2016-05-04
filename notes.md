@@ -37,9 +37,7 @@ understand the general network structure of a in-house cluster:
 
 As long as we configure computers to use HDCP and configured the
 router and all switches, those computers should be able to communicate
-to each other and the Internet once they are booted.
-
-Considering that we are going to build a computing cluster with about 100
+to each other and the Internet once they are booted.Considering that we are going to build a computing cluster with about 100
 nodes, some recommended hardwares:
 
 - a [router with firewall](http://www.fortinet.com.cn/products/fortigate/60D.html),
@@ -53,7 +51,7 @@ To better understand the tree-toplogy of the network, it is important
 to understand two concepts
 [广播域和冲突域](http://202.201.18.40:8080/mas5/bbs/showBBS.jsp?id=5015&forum=259&noButton=yes).
 
-## CoreOS
+## CoreOS on VirtualBox
 
 吕宏利 reminded that even if it is true that we can boot servers from
 PXE server, the PXE server is a single-point -- if it fails, the whole
@@ -70,3 +68,68 @@ which should contain at least a user's SSH public key, so that the
 user can ssh to the CoreOS VM later.  I put this config file into my
 Github repo, and CoreOS has basic network tools like curl, which can
 be used to download the config file for use by `coreos-install`.
+
+I tried to follow https://github.com/emergingstack/es-dev-stack/ to
+build a Docker image of CUDA kernel module.  It builds.  But when I
+run the built docker image, it complains that the system doesn't have
+CUDA GPU. (Yes, it is a VM that doesn't have any GPU).
+
+## CoreOS on AWS EC2
+
+It is true that we can create CoreOS instances as explained in
+[this post](http://tleyden.github.io/blog/2014/11/04/coreos-with-nvidia-cuda-gpu-drivers/),
+but I cannot find a way to ssh to the instance.  So I resorted to
+CloudFoundation to create a CoreOS cluster with at least 3 instances.
+CoreOS's tutorial lacks details, reasons, explanations.  Luckily, I
+found [this tutorial](https://deis.com/blog/2016/coreos-on-aws/).
+
+### Too Big Docker Image to Build
+
+It is notable that the Dockerfile will run out of disk space on either
+`g2.x2large` nodes or `g2.8xlarge` nodes.  So I tried to git clone
+only the most recent commit of the wanted branch of Linux kernel code:
+
+1. `git clone git://git.kernel.org/pub/scm/linux/kernel/git/stable/linux-stable.git linux` gives 1.8GB.
+1. Then I removed the `.git` subdirectory. It leaves 715MB.
+1. `git clone -b v4.4.8 --depth 1 git://git.kernel.org/pub/scm/linux/kernel/git/stable/linux-stable.git linux` gives 850MB
+1. Then I removed the `.git` subdirectory. It leaves 696MB.
+
+Anyway, I cannot build the Docker image on even `g2.8xlarge`.
+
+So I go back to use VirtualBox VM and installed CoreOS 899.15.0.
+After ssh into the VM, `uname -r` shows Linux kernel version 4.3.6 --
+exactly as that on AWS!
+
+So I build the Docker image on the VM, tag and push it:
+
+```
+docker tag xxxxxx cxwangyi/cuda:v1
+docker login --username=cxwangyi --email=yi.wang.2005@gmail.com
+docker push cxwangyi/cuda
+```
+
+Then on an EC2 CUDA instance, I run:
+
+```
+docker run -it --priviledged cxwangyi/cuda:v1
+```
+
+### Too Big Docker Image to Pull
+
+However, this complains that the Docker image to be pulled is too big
+and runs out of disk space.  The question becomes: how to make Docker
+images smaller.  Google told me --
+[docker-squash](https://github.com/jwilder/docker-squash).
+
+I downloaded pre-built docker-squash from its Github README.md page,
+and scp to my VirtualBox VM, untar there.  Then I followed the
+[usage description](http://jasonwilder.com/blog/2014/08/19/squashing-docker-images/)
+to remove Linux kernel source code and NVidia packages and
+docker-squash.
+
+On my VM and AWS EC2 instances, CoreOS mounts `/tmp` to a small
+in-memory filesystem which is too small.  The solution is simply `sudo
+umount /tmp` so that `/tmp` is on the big disk partition which holds
+`/`.
+
+
