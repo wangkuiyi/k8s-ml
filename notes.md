@@ -133,3 +133,46 @@ umount /tmp` so that `/tmp` is on the big disk partition which holds
 `/`.
 
 
+### Solution
+
+The solution is simply build the Docker image manually, so all changes
+get into a single commit.  During this manual procedure, we delete
+files that are no longer useful.  This starts from the base image of
+ubuntu:14.04:
+
+```
+docker run -it --privileged ubuntu:14.04 /bin/bash
+```
+
+followed by all steps enlisted
+[here](https://github.com/wangkuiyi/es-dev-stack/blob/clone-most-recent-commit-of-linux-kernel/corenvidiadrivers/Dockerfile)
+with RUN and the final CMD.  The final step generates
+`/opt/nvidia/nvidia_installers/NVIDIA-Linux-x86_64-352.39/kernel/uvm/nvidia-uvm.ko`,
+the kernel module we need.  Then all other stuff, Linux kernel source
+code and CUDA things can be deleted.  Then we do
+
+```
+exit # exit from the running of /bin/bash in ubuntu:14:04 container
+docker commit <id>
+```
+
+so to make all our work into a single Docker commit.  The `docker
+commit` command will print a new Docker commit id, say <new_cid>,
+which can be tagged:
+
+```
+docker tag cxwangyi/cuda <new_cid>
+```
+
+An alternative solution is to combine all RUN directives in Dockerfile
+into a single one, so that `docker build` creates a single commit with
+all changes.
+
+### Pitfalls
+
+I tried using docker-squash to reduce the image size.  But it is not
+as effective as grouping all changes into a single Docker commit.
+
+I once forgot to use the `--privilege` option and causes some
+confusions as I documented
+[here](https://github.com/emergingstack/es-dev-stack/issues/15).
