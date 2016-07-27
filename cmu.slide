@@ -433,11 +433,12 @@ consideration.
 
 The tech stack
 
-      Application   : ASR server      Kafka       Log joiner   model trainer
-      Framework     :   nginx                        Storm        Torch
-      Cluster Mgmt  :               Kubernetes
-      Distributed FS:                  Ceph
-      Local OS      :      Ubuntu Linux with modern kernel
+      Application    : ASR server      Kafka       Log joiner   model trainer
+      Framework      :   nginx                        Storm        Torch
+      Cluster Mgmt   :               Kubernetes
+      Distributed FS :                  Ceph
+      Locking service:                 etcd
+      Local OS       :                 CoreOS
 
 The data flow
 
